@@ -7,10 +7,12 @@
 #define DEVICE_NAME "LINE Things Trial ESP32"
 
 // User service UUID: Change this to your generated service UUID
-#define USER_SERVICE_UUID "91E4E176-D0B9-464D-9FE4-52EE3E9F1552"
+//#define USER_SERVICE_UUID "91E4E176-D0B9-464D-9FE4-52EE3E9F1552"
+#define USER_SERVICE_UUID "88cf1441-710f-4a19-85c7-c251892f8ac4"
 // User service characteristics
 #define WRITE_CHARACTERISTIC_UUID "E9062E71-9E62-4BC6-B0D3-35CDCD9B027B"
 #define NOTIFY_CHARACTERISTIC_UUID "62FBD229-6EDD-4D1A-B554-5C4E1BB29169"
+#define READ_CHARACTERISTIC_UUID "dd8bbcf5-ca16-4e63-8fbd-ee977134e3e3"
 
 // PSDI Service UUID: Fixed value for Developer Trial
 #define PSDI_SERVICE_UUID "E625601E-9E55-4597-A598-76018A0D293D"
@@ -26,6 +28,7 @@ BLEService* psdiService;
 BLECharacteristic* psdiCharacteristic;
 BLECharacteristic* writeCharacteristic;
 BLECharacteristic* notifyCharacteristic;
+BLECharacteristic* readCharacteristic;
 
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
@@ -72,6 +75,8 @@ void setup() {
   Serial.println("Ready to Connect");
 }
 
+int btnCount = 0;
+
 void loop() {
   uint8_t btnValue;
 
@@ -81,6 +86,10 @@ void loop() {
     notifyCharacteristic->setValue(&btnValue, 1);
     notifyCharacteristic->notify();
     delay(20);
+    if (btnValue) {
+      btnCount++;
+      readCharacteristic->setValue(btnCount);
+    }
   }
   // Disconnection
   if (!deviceConnected && oldDeviceConnected) {
@@ -108,6 +117,11 @@ void setupServices(void) {
 
   notifyCharacteristic = userService->createCharacteristic(NOTIFY_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_NOTIFY);
   notifyCharacteristic->setAccessPermissions(ESP_GATT_PERM_READ_ENCRYPTED | ESP_GATT_PERM_WRITE_ENCRYPTED);
+
+  readCharacteristic = userService->createCharacteristic(READ_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ);
+  readCharacteristic->setAccessPermissions(ESP_GATT_PERM_READ_ENCRYPTED);
+  readCharacteristic->setValue(0); // とりあえず 0 で初期化
+  
   BLE2902* ble9202 = new BLE2902();
   ble9202->setNotifications(true);
   ble9202->setAccessPermissions(ESP_GATT_PERM_READ_ENCRYPTED | ESP_GATT_PERM_WRITE_ENCRYPTED);
